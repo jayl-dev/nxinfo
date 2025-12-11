@@ -7,6 +7,10 @@ I have found that Ryujinx emulator https://ryujinx.app/ and NxFileViewer https:/
 
 Often times I play switch games on my android tablets and I got tired of copying the switch files over to a computer just to figure out the build id, so I created this app for myself. 
 
+Download apk [https://github.com/jayl-dev/nxinfo/releases/download/1.0/nxinfo.apk]
+
+![nxinfo](screenshot.png)
+
 # Credits
 
 The app uses modified c++ codes from https://github.com/jakcron/nstool and various open sourced libraries to parse the switch files.
