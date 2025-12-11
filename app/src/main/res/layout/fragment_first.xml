@@ -127,6 +127,8 @@
                     android:layout_marginBottom="16dp"
                     android:scaleType="fitCenter"
                     android:contentDescription="@string/game_icon"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:visibility="gone" />
 
                 <LinearLayout
@@ -147,7 +149,9 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="2"
-                        android:text="-" />
+                        android:text="-"
+                        android:clickable="true"
+                        android:focusable="true" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -169,7 +173,9 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="2"
                         android:text="-"
-                        android:fontFamily="monospace" />
+                        android:fontFamily="monospace"
+                        android:clickable="true"
+                        android:focusable="true" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -190,7 +196,9 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="2"
-                        android:text="-" />
+                        android:text="-"
+                        android:clickable="true"
+                        android:focusable="true" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -211,7 +219,9 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="2"
-                        android:text="-" />
+                        android:text="-"
+                        android:clickable="true"
+                        android:focusable="true" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -234,7 +244,9 @@
                         android:layout_weight="2"
                         android:text="-"
                         android:fontFamily="monospace"
-                        android:textSize="12sp" />
+                        android:textSize="12sp"
+                        android:clickable="true"
+                        android:focusable="true" />
                 </LinearLayout>
 
                 <LinearLayout

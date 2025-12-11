@@ -2,10 +2,16 @@ package com.jl.nxinfo
 
 import android.graphics.BitmapFactory
 import android.os.Bundle
-import androidx.fragment.app.Fragment
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import com.jl.nxinfo.databinding.FragmentFirstBinding
@@ -48,6 +54,33 @@ class FirstFragment : Fragment() {
         viewModel.romInfo.observe(viewLifecycleOwner) { romInfo ->
             romInfo?.let {
                 displayRomInfo(it)
+            }
+        }
+
+        // Set click listeners for copying to clipboard
+        binding.textviewTitle.setOnClickListener {
+            copyToClipboard("Game Title", binding.textviewTitle.text.toString())
+        }
+        binding.textviewTitleId.setOnClickListener {
+            copyToClipboard("Title ID", binding.textviewTitleId.text.toString())
+        }
+        binding.textviewVersion.setOnClickListener {
+            copyToClipboard("Version", binding.textviewVersion.text.toString())
+        }
+        binding.textviewSdkVersion.setOnClickListener {
+            copyToClipboard("SDK Version", binding.textviewSdkVersion.text.toString())
+        }
+        binding.textviewBuildId.setOnClickListener {
+            copyToClipboard("Build ID", binding.textviewBuildId.text.toString())
+        }
+
+        // Set click listener for opening Tinfoil URL
+        binding.imageviewIcon.setOnClickListener {
+            val titleId = binding.textviewTitleId.text.toString()
+            if (titleId.isNotBlank() && titleId != "-") {
+                openTinfoilUrl(titleId)
+            } else {
+                Toast.makeText(requireContext(), "Title ID not available", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -109,6 +142,18 @@ class FirstFragment : Fragment() {
                 imageviewIcon.visibility = View.GONE
             }
         }
+    }
+
+    private fun copyToClipboard(label: String, text: String) {
+        val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = ClipData.newPlainText(label, text)
+        clipboard.setPrimaryClip(clip)
+    }
+
+    private fun openTinfoilUrl(titleId: String) {
+        val url = "https://tinfoil.media/Title/$titleId"
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        startActivity(intent)
     }
 
     override fun onDestroyView() {
