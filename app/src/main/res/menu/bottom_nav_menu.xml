@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/navigation_rom_info"
+        android:icon="@android:drawable/ic_menu_info_details"
+        android:title="ROM Info" />
+    <item
+        android:id="@+id/navigation_cheats"
+        android:icon="@android:drawable/ic_menu_edit"
+        android:title="Cheats" />
+</menu>
