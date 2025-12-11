@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">nxinfo</string>
+    <string name="action_settings">Settings</string>
+    <!-- Strings used for fragments for navigation -->
+    <string name="first_fragment_label">nxinfo</string>
+    <string name="second_fragment_label">Second Fragment</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
+
+    <!-- prod.keys related strings -->
+    <string name="action_select_keys">Select prod.keys</string>
+    <string name="keys_file_selected">Keys file loaded successfully</string>
+    <string name="keys_file_invalid">The selected file does not appear to be a valid prod.keys file. Please ensure it contains Nintendo Switch encryption keys.</string>
+    <string name="keys_file_not_found_in_zip">The selected zip file does not contain a prod.keys file. Please select a zip that includes prod.keys.</string>
+    <string name="keys_file_error">Error loading keys file: %s</string>
+    <string name="keys_summary">%s</string>
+
+    <!-- ROM info strings -->
+    <string name="game_icon">Game Icon</string>
+
+</resources>
