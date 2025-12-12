@@ -55,6 +55,7 @@ dependencies {
     // ViewModel for orientation changes
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
     implementation("androidx.fragment:fragment-ktx:1.6.2")
+    implementation("androidx.documentfile:documentfile:1.0.1")
 
     // Cryptography for NCA decryption
     implementation("org.bouncycastle:bcprov-jdk15to18:1.78.1")

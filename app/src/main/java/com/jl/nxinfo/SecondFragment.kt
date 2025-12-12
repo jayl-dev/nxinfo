@@ -11,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -27,6 +28,8 @@ class SecondFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: CheatViewModel by activityViewModels()
+    
+    private var selectedBuildForExport: BuildCheats? = null
 
     private val cheatPickerLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
@@ -35,11 +38,20 @@ class SecondFragment : Fragment() {
             handleCheatFile(it)
         }
     }
+    
+    private val exportDirLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocumentTree()
+    ) { uri: Uri? ->
+        uri?.let {
+            handleExport(it)
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {
+    ):
+ View {
         _binding = FragmentSecondBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -102,6 +114,60 @@ class SecondFragment : Fragment() {
             }
         }
     }
+    
+    private fun handleExport(treeUri: Uri) {
+        val build = selectedBuildForExport ?: return
+        val gameName = viewModel.cheatInfo.value?.gameName ?: viewModel.cheatInfo.value?.titleId ?: "Unknown_Game"
+        
+        viewModel.setLoading(true)
+        CoroutineScope(Dispatchers.Main).launch {
+             val success = withContext(Dispatchers.IO) {
+                 exportCheats(treeUri, gameName, build)
+             }
+             viewModel.setLoading(false)
+             if (success) {
+                 Snackbar.make(binding.root, "Export successful", Snackbar.LENGTH_SHORT).show()
+             } else {
+                 Snackbar.make(binding.root, "Export failed", Snackbar.LENGTH_SHORT).show()
+             }
+        }
+    }
+    
+    private fun exportCheats(treeUri: Uri, gameName: String, build: BuildCheats): Boolean {
+        try {
+            val rootDir = DocumentFile.fromTreeUri(requireContext(), treeUri) ?: return false
+            val safeGameName = sanitizeFileName(gameName)
+            val gameDir = rootDir.findFile(safeGameName) ?: rootDir.createDirectory(safeGameName) ?: return false
+            
+            for (cheat in build.cheats) {
+                val safeCheatName = sanitizeFileName(cheat.name)
+                val cheatDir = gameDir.findFile(safeCheatName) ?: gameDir.createDirectory(safeCheatName) ?: continue
+                val cheatsSubDir = cheatDir.findFile("cheats") ?: cheatDir.createDirectory("cheats") ?: continue
+                
+                val fileName = "${build.buildId.uppercase()}.txt"
+                // If file exists, we probably want to overwrite or append? 
+                // Assuming overwrite for export, or check if exists.
+                // DocumentFile doesn't strictly support "overwrite" easily without delete, but openOutputStream("w") or "wt" might truncate.
+                // Actually contentResolver.openOutputStream(uri, "wt") truncates.
+                // But finding if file exists:
+                val existingFile = cheatsSubDir.findFile(fileName)
+                val file = existingFile ?: cheatsSubDir.createFile("text/plain", fileName) ?: continue
+                
+                requireContext().contentResolver.openOutputStream(file.uri, "wt")?.use { output ->
+                     val content = cheat.codes.joinToString("\n")
+                     output.write(content.toByteArray())
+                }
+            }
+            return true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return false
+        }
+    }
+    
+    private fun sanitizeFileName(name: String): String {
+        return name.replace(Regex("[\\\\/:*?\"<>|]"), "_")
+    }
 
     private fun displayCheatInfo(cheatInfo: CheatInfo) {
         binding.apply {
@@ -110,11 +176,26 @@ class SecondFragment : Fragment() {
             textviewCheatTitleId.text = cheatInfo.titleId
             textviewFilePath.text = cheatInfo.filePath
             
-            val adapter = BuildAdapter(cheatInfo.builds) { cheat ->
+            val adapter = BuildAdapter(cheatInfo.builds, { cheat ->
                 showCheatDialog(cheat)
-            }
+            }, { build ->
+                selectedBuildForExport = build
+                exportDirLauncher.launch(null)
+            }, {
+                showExportInfoDialog()
+            })
             recyclerviewBuilds.adapter = adapter
         }
+    }
+
+    private fun showExportInfoDialog() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Export Info")
+            .setMessage("This function export this cheat/mods to a folder structure that the Citron/Eden emulator can load.\n\nAfter exporting, go to Citron/Eden emulator (android), long press a game, Add-ons -> Install -> Mods and cheats to install: \n\nFor example, you will find an exported folder like [Infinite HP]/cheats/12838123812.txt , select the [Infinite HP] folder to install the mods/cheat \n\n**Make sure you check the Build ID, otherwise the mods/cheat will not work**")
+            .setPositiveButton("OK") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
     }
 
     private fun showCheatDialog(cheat: Cheat) {

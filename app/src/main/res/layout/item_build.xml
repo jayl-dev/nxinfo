@@ -42,6 +42,24 @@
                 android:textSize="14sp"
                 android:textIsSelectable="true" />
 
+            <Button
+                android:id="@+id/button_export"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Export"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                style="@style/Widget.Material3.Button.TextButton" />
+
+            <ImageButton
+                android:id="@+id/button_info"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@android:drawable/ic_menu_info_details"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Info"
+                android:tint="?android:attr/textColorSecondary" />
+
         </LinearLayout>
 
         <View

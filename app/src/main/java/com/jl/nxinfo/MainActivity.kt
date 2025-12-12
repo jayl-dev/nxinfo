@@ -59,8 +59,8 @@ class MainActivity : AppCompatActivity() {
         appBarConfiguration = AppBarConfiguration(setOf(R.id.FirstFragment, R.id.SecondFragment))
         setupActionBarWithNavController(navController, appBarConfiguration)
 
-        val bottomNav = binding.root.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_navigation)
-        bottomNav?.setOnItemSelectedListener { item ->
+        val navView = binding.root.findViewById<com.google.android.material.navigation.NavigationBarView>(R.id.navigation_view)
+        navView?.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.navigation_rom_info -> {
                     if (navController.currentDestination?.id != R.id.FirstFragment) {
@@ -80,8 +80,8 @@ class MainActivity : AppCompatActivity() {
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
             when (destination.id) {
-                R.id.FirstFragment -> bottomNav?.selectedItemId = R.id.navigation_rom_info
-                R.id.SecondFragment -> bottomNav?.selectedItemId = R.id.navigation_cheats
+                R.id.FirstFragment -> navView?.selectedItemId = R.id.navigation_rom_info
+                R.id.SecondFragment -> navView?.selectedItemId = R.id.navigation_cheats
             }
         }
     }
