@@ -154,7 +154,7 @@ class SecondFragment : Fragment() {
                 val file = existingFile ?: cheatsSubDir.createFile("text/plain", fileName) ?: continue
                 
                 requireContext().contentResolver.openOutputStream(file.uri, "wt")?.use { output ->
-                     val content = cheat.codes.joinToString("\n")
+                     val content = "${cheat.name}\n${cheat.codes.joinToString("\n")}"
                      output.write(content.toByteArray())
                 }
             }
