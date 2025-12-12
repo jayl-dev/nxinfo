@@ -168,7 +168,7 @@ class CheatFileManager private constructor(private val context: Context) {
             var gameName: String? = null
             // Regex to match: [XXXX vxxxx TID=XXX BID=XXX]
             // We want to capture XXXX (Game Name).
-            val gameNameRegex = Regex("^\\[(.*?)\\s+TID=.*?\\]")
+            val gameNameRegex = Regex("^\\[(.*?)\\s+TID.*?\\]")
 
             ZipInputStream(inputStream).use {
                 var entry = it.nextEntry
