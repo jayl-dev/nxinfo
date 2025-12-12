@@ -13,7 +13,7 @@ Often times I play switch games on my android tablets and I got tired of copying
 
 If you have similar needs for android, feel free to take the codes and/or the apk and do whatever you want with it.
 
-Download apk [https://github.com/jayl-dev/nxinfo/releases/download/1.1/nxinfo.apk]
+Download apk [https://github.com/jayl-dev/nxinfo/releases/latest/download/nxinfo.apk]
 
 ![nxinfo](screenshot.png)
 ![nxinfo](screenshot2.png)
