@@ -2,7 +2,10 @@ package com.jl.nxinfo
 
 import android.content.Context
 import android.net.Uri
+import android.provider.OpenableColumns
 import android.util.Log
+import org.json.JSONObject
+import java.io.BufferedReader
 import java.util.zip.ZipInputStream
 
 data class Cheat(
@@ -10,11 +13,16 @@ data class Cheat(
     val codes: List<String>
 )
 
+data class BuildCheats(
+    val buildId: String,
+    val cheats: List<Cheat>
+)
+
 data class CheatInfo(
     val titleId: String,
-    val buildId: String,
-    val cheats: List<Cheat>,
-    val rawLines: List<String>
+    val gameName: String?,
+    val filePath: String,
+    val builds: List<BuildCheats>
 )
 
 sealed class CheatResult {
@@ -48,7 +56,16 @@ class CheatFileManager private constructor(private val context: Context) {
             val inputStream = context.contentResolver.openInputStream(uri)
                 ?: return CheatResult.Error("Cannot open file")
 
-            return extractCheatFromZip(inputStream)
+            val fileName = getFileName(uri) ?: "unknown"
+            val filePath = uri.path ?: uri.toString()
+
+            return if (fileName.endsWith(".json", ignoreCase = true)) {
+                extractCheatFromJson(inputStream, fileName, filePath)
+            } else if (fileName.endsWith(".zip", ignoreCase = true)) {
+                extractCheatFromZip(inputStream, filePath)
+            } else {
+                CheatResult.Error("Unsupported file type. Please select a .json or .zip file.")
+            }
 
         } catch (e: Exception) {
             Log.e(TAG, "Error extracting cheat file", e)
@@ -56,10 +73,105 @@ class CheatFileManager private constructor(private val context: Context) {
         }
     }
 
-    private fun extractCheatFromZip(inputStream: java.io.InputStream): CheatResult {
+    private fun getFileName(uri: Uri): String? {
+        var result: String? = null
+        if (uri.scheme == "content") {
+            val cursor = context.contentResolver.query(uri, null, null, null, null)
+            try {
+                if (cursor != null && cursor.moveToFirst()) {
+                    val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (index >= 0) {
+                        result = cursor.getString(index)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to query file name: $e")
+            } finally {
+                cursor?.close()
+            }
+        }
+        if (result == null) {
+            result = uri.path
+            val cut = result?.lastIndexOf('/')
+            if (cut != null && cut != -1) {
+                result = result?.substring(cut + 1)
+            }
+        }
+        return result
+    }
+
+    private fun extractCheatFromJson(inputStream: java.io.InputStream, fileName: String, filePath: String): CheatResult {
         try {
-            ZipInputStream(inputStream).use { zipStream ->
-                var entry = zipStream.nextEntry
+            val jsonString = inputStream.bufferedReader().use { it.readText() }
+            val jsonObject = JSONObject(jsonString)
+
+            var extractedTitleId = fileName.substringBeforeLast(".json")
+            var gameName: String? = null
+            val regex = Regex("\\[(.*?)\\]-(.*)")
+            val match = regex.matchEntire(extractedTitleId)
+            if (match != null) {
+                gameName = match.groupValues[1]
+                extractedTitleId = match.groupValues[2]
+            } else {
+                gameName = extractedTitleId
+            }
+
+            val builds = mutableListOf<BuildCheats>()
+
+            val keys = jsonObject.keys()
+            while (keys.hasNext()) {
+                val buildId = keys.next()
+                if (buildId == "attribution") continue
+
+                val buildCheatsObj = jsonObject.optJSONObject(buildId) ?: continue
+                val cheats = mutableListOf<Cheat>()
+
+                val cheatKeys = buildCheatsObj.keys()
+                while (cheatKeys.hasNext()) {
+                    val cheatName = cheatKeys.next()
+                    val cheatContent = buildCheatsObj.getString(cheatName)
+                    val cheatLines = cheatContent.lines()
+                    cheats.addAll(parseCheatFile(cheatLines))
+                }
+
+                if (cheats.isNotEmpty()) {
+                    builds.add(BuildCheats(buildId, cheats))
+                }
+            }
+
+            if (builds.isEmpty()) {
+                return CheatResult.Error("No cheats found in JSON file")
+            }
+
+            val cheatInfo = CheatInfo(
+                titleId = extractedTitleId,
+                gameName = gameName,
+                filePath = filePath,
+                builds = builds
+            )
+
+            lastCheatInfo = cheatInfo
+            Log.d(TAG, "Cheat file extracted from JSON - Title ID: $extractedTitleId, Game Name: $gameName, Builds: ${builds.size}")
+
+            return CheatResult.Success(cheatInfo)
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error extracting cheat from JSON", e)
+            return CheatResult.Error(e.message ?: "Error parsing JSON")
+        }
+    }
+
+    private fun extractCheatFromZip(inputStream: java.io.InputStream, filePath: String): CheatResult {
+        try {
+            val builds = mutableListOf<BuildCheats>()
+            var foundTitleId: String? = null
+            var gameName: String? = null
+            // Regex to match: [XXXX vxxxx TID=XXX BID=XXX]
+            // We want to capture XXXX (Game Name).
+            val gameNameRegex = Regex("^\\[(.*?)\\s+v.*?TID=.*?BID=.*?\\]")
+
+            ZipInputStream(inputStream).use {
+                var entry = it.nextEntry
                 while (entry != null) {
                     val entryName = entry.name
 
@@ -71,31 +183,52 @@ class CheatFileManager private constructor(private val context: Context) {
                         if (pathResult != null) {
                             val (titleId, buildId) = pathResult
 
-                            val rawLines = zipStream.bufferedReader().use { reader ->
-                                reader.readLines()
+                            // We only support one title ID per session for now.
+                            // If we haven't found one, set it. If we have, only process matches.
+                            if (foundTitleId == null) {
+                                foundTitleId = titleId
                             }
 
-                            val cheats = parseCheatFile(rawLines)
-
-                            val cheatInfo = CheatInfo(
-                                titleId = titleId,
-                                buildId = buildId,
-                                cheats = cheats,
-                                rawLines = rawLines
-                            )
-
-                            lastCheatInfo = cheatInfo
-
-                            Log.d(TAG, "Cheat file extracted - Title ID: $titleId, Build ID: $buildId, Cheats: ${cheats.size}, Lines: ${rawLines.size}")
-                            return CheatResult.Success(cheatInfo)
+                            if (foundTitleId == titleId) {
+                                val lines = String(it.readBytes(), Charsets.UTF_8).lines()
+                                val cheats = parseCheatFile(lines)
+                                if (cheats.isNotEmpty()) {
+                                    builds.add(BuildCheats(buildId, cheats))
+                                    
+                                    // Look for game name if we haven't found it yet
+                                    if (gameName == null) {
+                                        for (cheat in cheats) {
+                                            val match = gameNameRegex.find(cheat.name)
+                                            if (match != null) {
+                                                gameName = match.groupValues[1]
+                                                Log.d(TAG, "Found game name in cheat: $gameName")
+                                                break
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
-                    entry = zipStream.nextEntry
+                    entry = it.nextEntry
                 }
+            }
 
-                Log.e(TAG, "Cheat file not found in zip with expected structure")
+            if (foundTitleId == null || builds.isEmpty()) {
                 return CheatResult.NotFoundInZip
             }
+
+            val cheatInfo = CheatInfo(
+                titleId = foundTitleId!!,
+                gameName = gameName ?: foundTitleId,
+                filePath = filePath,
+                builds = builds
+            )
+
+            lastCheatInfo = cheatInfo
+            Log.d(TAG, "Cheat file extracted from ZIP - Title ID: $foundTitleId, Game Name: $gameName, Builds: ${builds.size}")
+            return CheatResult.Success(cheatInfo)
+
         } catch (e: Exception) {
             Log.e(TAG, "Error extracting cheat from zip", e)
             return CheatResult.Error(e.message ?: "Unknown error")
@@ -128,7 +261,6 @@ class CheatFileManager private constructor(private val context: Context) {
                 return null
             }
 
-            Log.d(TAG, "Parsed path - Title ID: $titleId, Build ID: $buildId")
             return Pair(titleId, buildId)
 
         } catch (e: Exception) {
@@ -148,15 +280,6 @@ class CheatFileManager private constructor(private val context: Context) {
     fun clearCheatInfo() {
         lastCheatInfo = null
         Log.d(TAG, "Cheat info cleared")
-    }
-
-    fun getCheatSummary(): String {
-        return if (hasCheatInfo()) {
-            val info = lastCheatInfo!!
-            "Title ID: ${info.titleId}, Build ID: ${info.buildId}, Cheats: ${info.cheats.size}"
-        } else {
-            "No cheat file loaded"
-        }
     }
 
     private fun parseCheatFile(lines: List<String>): List<Cheat> {
@@ -184,13 +307,7 @@ class CheatFileManager private constructor(private val context: Context) {
                     currentCodes.clear()
                 }
 
-                currentName = when {
-                    trimmed.startsWith("[") && trimmed.endsWith("]") ->
-                        trimmed.substring(1, trimmed.length - 1)
-                    trimmed.startsWith("{") && trimmed.endsWith("}") ->
-                        trimmed.substring(1, trimmed.length - 1)
-                    else -> trimmed
-                }
+                currentName = trimmed
             } else {
                 if (currentName != null) {
                     currentCodes.add(trimmed)
@@ -202,7 +319,6 @@ class CheatFileManager private constructor(private val context: Context) {
             cheats.add(Cheat(currentName, currentCodes.toList()))
         }
 
-        Log.d(TAG, "Parsed ${cheats.size} cheats from file")
         return cheats
     }
 }

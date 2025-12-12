@@ -2,7 +2,11 @@
     <!-- Base application theme. -->
     <style name="Base.Theme.Nxinfo" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/switch_red</item>
+        <item name="colorSecondary">@color/switch_red</item>
+        <item name="colorTertiary">@color/switch_red</item>
+        <item name="colorPrimaryContainer">@color/switch_red</item>
+        <item name="colorOnPrimaryContainer">@color/white</item>
     </style>
 
     <style name="Theme.Nxinfo" parent="Base.Theme.Nxinfo" />

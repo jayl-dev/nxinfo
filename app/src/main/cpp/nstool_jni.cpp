@@ -423,7 +423,7 @@ Java_com_jl_nxinfo_SwitchRomParser_parseRomNative(
                     LOGI("  Has Rights ID: %s", ncaHdr.hasRightsId() ? "YES" : "NO");
                     LOGI("  Partition Entries: %zu", ncaHdr.getPartitionEntryList().size());
 
-                    if (titleId == "Unknown") {
+                    if (titleId == "Unknown" && ncaHdr.getContentType() == pie::hac::nca::ContentType_Program) {
                         char buf[17];
                         snprintf(buf, sizeof(buf), "%016llx", (unsigned long long)ncaHdr.getProgramId());
                         titleId = std::string(buf);

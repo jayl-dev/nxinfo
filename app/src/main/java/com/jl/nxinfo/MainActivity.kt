@@ -56,7 +56,7 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(binding.toolbar)
 
         val navController = findNavController(R.id.nav_host_fragment_content_main)
-        appBarConfiguration = AppBarConfiguration(navController.graph)
+        appBarConfiguration = AppBarConfiguration(setOf(R.id.FirstFragment, R.id.SecondFragment))
         setupActionBarWithNavController(navController, appBarConfiguration)
 
         val bottomNav = binding.root.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottom_navigation)
@@ -84,21 +84,6 @@ class MainActivity : AppCompatActivity() {
                 R.id.SecondFragment -> bottomNav?.selectedItemId = R.id.navigation_cheats
             }
         }
-
-        binding.fab.setOnClickListener {
-            val keysManager = ProdKeysManager.getInstance(this)
-            if (!keysManager.isKeysLoaded()) {
-                Snackbar.make(binding.root, "Please import prod.keys file first (use menu button)", Snackbar.LENGTH_LONG)
-                    .setAnchorView(R.id.fab)
-                    .setAction("Select Keys") {
-                        openKeysFilePicker()
-                    }
-                    .show()
-                return@setOnClickListener
-            }
-
-            filePickerLauncher.launch("*/*")
-        }
     }
 
     private fun handleSelectedFile(uri: Uri) {
@@ -107,7 +92,6 @@ class MainActivity : AppCompatActivity() {
 
         if (extension !in listOf("xci", "nsp", "nsz", "xcz")) {
             Snackbar.make(binding.root, "Please select a valid Switch ROM file (.xci, .nsp, .nsz, .xcz)", Snackbar.LENGTH_LONG)
-                .setAnchorView(R.id.fab)
                 .show()
             return
         }
@@ -170,7 +154,6 @@ class MainActivity : AppCompatActivity() {
             }
 
             Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG)
-                .setAnchorView(R.id.fab)
                 .show()
 
             if (result is KeysResult.Success) {
