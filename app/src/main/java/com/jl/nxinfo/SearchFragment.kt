@@ -168,8 +168,28 @@ class SearchFragment : Fragment() {
             // Database exists, load it
             loadDatabase()
         } else {
-            // Show download instructions
-            showDownloadInstructions()
+            // Copy from assets
+            copyDatabaseFromAssets()
+        }
+    }
+
+    private fun copyDatabaseFromAssets() {
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    val dbFile = File(requireContext().filesDir, databaseFileName)
+                    requireContext().assets.open(databaseFileName).use { inputStream ->
+                        dbFile.outputStream().use { outputStream ->
+                            inputStream.copyTo(outputStream)
+                        }
+                    }
+                }
+                loadDatabase()
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Error copying database: ${e.message}", Toast.LENGTH_LONG).show()
+                e.printStackTrace()
+                showDownloadInstructions() // Fallback to download
+            }
         }
     }
 

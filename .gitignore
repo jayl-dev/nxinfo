@@ -93,3 +93,4 @@ Desktop.ini
 !.gitignore
 !.gitmodules
 !.github/
+app/src/main/assets/switch_games.json

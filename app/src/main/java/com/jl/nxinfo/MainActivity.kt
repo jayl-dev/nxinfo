@@ -1,6 +1,7 @@
 package com.jl.nxinfo
 
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -13,6 +14,7 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.navigation.NavigationBarView
 import com.google.android.material.snackbar.Snackbar
 import com.jl.nxinfo.databinding.ActivityMainBinding
@@ -118,9 +120,33 @@ class MainActivity : AppCompatActivity() {
                 }
                 true
             }
-            R.id.action_settings -> true
+            R.id.action_about -> {
+                showAboutDialog()
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    private fun showAboutDialog() {
+
+        val pInfo = packageManager.getPackageInfo(packageName, 0)
+        val appVersionName = pInfo.versionName
+
+        val device = "${Build.MANUFACTURER} ${Build.MODEL}"
+        val androidVersion = "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})"
+
+        val aboutInfo = """
+            App Version: $appVersionName
+            Device: $device
+            Android Version: $androidVersion
+        """.trimIndent()
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("About nxinfo")
+            .setMessage(aboutInfo)
+            .setPositiveButton("OK", null)
+            .show()
     }
 
     fun openKeysFilePicker() {
