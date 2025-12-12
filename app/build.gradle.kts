@@ -60,6 +60,21 @@ dependencies {
     // Cryptography for NCA decryption
     implementation("org.bouncycastle:bcprov-jdk15to18:1.78.1")
 
+    // Networking
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    // JSON parsing
+    implementation("com.google.code.gson:gson:2.10.1")
+
+    // Image loading
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+
+    // RecyclerView
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
+
+    // Chinese character conversion (Simplified <-> Traditional)
+    implementation("com.github.houbb:opencc4j:1.8.1")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     implementation(libs.androidx.espresso.core)

@@ -2,17 +2,19 @@ package com.jl.nxinfo
 
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
-import android.view.Menu
-import android.view.MenuItem
+import androidx.navigation.ui.setupWithNavController
+import com.google.android.material.navigation.NavigationBarView
+import com.google.android.material.snackbar.Snackbar
 import com.jl.nxinfo.databinding.ActivityMainBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,6 +28,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
     private val viewModel: RomInfoViewModel by viewModels()
+    private var menu: Menu? = null
 
     private val filePickerLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
@@ -56,33 +59,15 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(binding.toolbar)
 
         val navController = findNavController(R.id.nav_host_fragment_content_main)
-        appBarConfiguration = AppBarConfiguration(setOf(R.id.FirstFragment, R.id.SecondFragment))
+        appBarConfiguration = AppBarConfiguration(setOf(R.id.navigation_rom_info, R.id.navigation_cheats, R.id.navigation_search))
         setupActionBarWithNavController(navController, appBarConfiguration)
 
-        val navView = binding.root.findViewById<com.google.android.material.navigation.NavigationBarView>(R.id.navigation_view)
-        navView?.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.navigation_rom_info -> {
-                    if (navController.currentDestination?.id != R.id.FirstFragment) {
-                        navController.navigate(R.id.FirstFragment)
-                    }
-                    true
-                }
-                R.id.navigation_cheats -> {
-                    if (navController.currentDestination?.id != R.id.SecondFragment) {
-                        navController.navigate(R.id.SecondFragment)
-                    }
-                    true
-                }
-                else -> false
-            }
-        }
+        val navView = binding.root.findViewById<NavigationBarView>(R.id.navigation_view)
+        navView?.setupWithNavController(navController)
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            when (destination.id) {
-                R.id.FirstFragment -> navView?.selectedItemId = R.id.navigation_rom_info
-                R.id.SecondFragment -> navView?.selectedItemId = R.id.navigation_cheats
-            }
+            menu?.findItem(R.id.action_redownload_database)?.isVisible = destination.id == R.id.navigation_search
+            menu?.findItem(R.id.action_select_keys)?.isVisible = destination.id == R.id.navigation_rom_info
         }
     }
 
@@ -111,6 +96,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_main, menu)
+        this.menu = menu
+        // Set initial visibility
+        val navController = findNavController(R.id.nav_host_fragment_content_main)
+        menu.findItem(R.id.action_redownload_database)?.isVisible = navController.currentDestination?.id == R.id.navigation_search
+        menu.findItem(R.id.action_select_keys)?.isVisible = navController.currentDestination?.id == R.id.navigation_rom_info
         return true
     }
 
@@ -118,6 +108,14 @@ class MainActivity : AppCompatActivity() {
         return when (item.itemId) {
             R.id.action_select_keys -> {
                 keysPickerLauncher.launch("*/*")
+                true
+            }
+            R.id.action_redownload_database -> {
+                val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main)
+                val currentFragment = navHostFragment?.childFragmentManager?.fragments?.firstOrNull()
+                if (currentFragment is SearchFragment) {
+                    currentFragment.redownloadDatabase()
+                }
                 true
             }
             R.id.action_settings -> true

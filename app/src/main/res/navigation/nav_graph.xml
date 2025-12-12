@@ -3,26 +3,31 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/FirstFragment">
+    app:startDestination="@id/navigation_rom_info">
 
     <fragment
-        android:id="@+id/FirstFragment"
+        android:id="@+id/navigation_rom_info"
         android:name="com.jl.nxinfo.FirstFragment"
         android:label="@string/first_fragment_label"
         tools:layout="@layout/fragment_first">
 
         <action
-            android:id="@+id/action_FirstFragment_to_SecondFragment"
-            app:destination="@id/SecondFragment" />
+            android:id="@+id/action_rom_info_to_cheats"
+            app:destination="@id/navigation_cheats" />
     </fragment>
     <fragment
-        android:id="@+id/SecondFragment"
+        android:id="@+id/navigation_cheats"
         android:name="com.jl.nxinfo.SecondFragment"
         android:label="@string/second_fragment_label"
         tools:layout="@layout/fragment_second">
 
         <action
-            android:id="@+id/action_SecondFragment_to_FirstFragment"
-            app:destination="@id/FirstFragment" />
+            android:id="@+id/action_cheats_to_rom_info"
+            app:destination="@id/navigation_rom_info" />
     </fragment>
+    <fragment
+        android:id="@+id/navigation_search"
+        android:name="com.jl.nxinfo.SearchFragment"
+        android:label="@string/search_fragment_label"
+        tools:layout="@layout/fragment_search" />
 </navigation>

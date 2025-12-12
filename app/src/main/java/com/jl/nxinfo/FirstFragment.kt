@@ -2,26 +2,18 @@ package com.jl.nxinfo
 
 import android.graphics.BitmapFactory
 import android.os.Bundle
-import android.os.Build
-import android.os.Environment
 import android.content.ClipData
 import android.content.ClipboardManager
-import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import java.io.File
-import java.io.FileOutputStream
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.navigation.fragment.findNavController
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.jl.nxinfo.databinding.FragmentFirstBinding
 import kotlinx.coroutines.CoroutineScope
@@ -122,20 +114,13 @@ class FirstFragment : Fragment() {
         // Set click listeners for cheat search buttons
         binding.buttonFindCheatslips.setOnClickListener {
             val title = binding.textviewTitle.text.toString()
-            if (title.isNotBlank() && title != "-") {
-                searchCheatSlips(title)
-            } else {
-                Toast.makeText(requireContext(), "Title not available", Toast.LENGTH_SHORT).show()
-            }
+            CheatSearchHelper.searchOnCheatSlips(requireContext(), title)
         }
 
         binding.buttonFindCheatsDb.setOnClickListener {
             val titleId = binding.textviewTitleId.text.toString()
-            if (titleId.isNotBlank() && titleId != "-") {
-                findCheatsFromDb(titleId)
-            } else {
-                Toast.makeText(requireContext(), "Title ID not available", Toast.LENGTH_SHORT).show()
-            }
+            val gameTitle = binding.textviewTitle.text.toString()
+            CheatSearchHelper.findInCheatDatabase(this, titleId, gameTitle)
         }
     }
 
@@ -206,8 +191,7 @@ class FirstFragment : Fragment() {
 
     private fun openTinfoilUrl(titleId: String) {
         val url = "https://tinfoil.media/Title/$titleId"
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-        startActivity(intent)
+        CheatSearchHelper.openUrl(requireContext(), url)
     }
 
     private fun handleSelectedFile(uri: Uri) {
@@ -230,121 +214,6 @@ class FirstFragment : Fragment() {
 
             viewModel.setRomInfo(romInfo)
             viewModel.setLoading(false)
-        }
-    }
-
-    private fun searchCheatSlips(title: String) {
-        val encodedTitle = Uri.encode(title)
-        val url = "https://www.cheatslips.com/games/search/?terms=$encodedTitle"
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-        startActivity(intent)
-    }
-
-    private fun findCheatsFromDb(titleId: String) {
-        val url = "https://raw.githubusercontent.com/HamletDuFromage/switch-cheats-db/refs/heads/master/cheats/$titleId.json"
-
-        CoroutineScope(Dispatchers.Main).launch {
-            try {
-                val jsonContent = withContext(Dispatchers.IO) {
-                    checkAndDownloadJson(url)
-                }
-
-                if (jsonContent != null) {
-                    showDownloadDialog(titleId, jsonContent)
-                } else {
-                    Toast.makeText(requireContext(), "No cheats found in database for this title", Toast.LENGTH_LONG).show()
-                }
-            } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Error checking cheats database: ${e.message}", Toast.LENGTH_LONG).show()
-            }
-        }
-    }
-
-    private fun checkAndDownloadJson(url: String): String? {
-        return try {
-            val connection = java.net.URL(url).openConnection() as java.net.HttpURLConnection
-            connection.requestMethod = "GET"
-            connection.connectTimeout = 10000
-            connection.readTimeout = 10000
-
-            if (connection.responseCode == 200) {
-                connection.inputStream.bufferedReader().use { it.readText() }
-            } else {
-                null
-            }
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    private fun showDownloadDialog(titleId: String, jsonContent: String) {
-        val gameTitle = viewModel.romInfo.value?.title ?: "Unknown"
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Cheats Found")
-            .setMessage("Cheat file found for title ID: $titleId\n\nDo you want to download it to your Downloads folder?")
-            .setPositiveButton("Yes") { dialog, _ ->
-                downloadCheatFile(titleId, gameTitle, jsonContent)
-                dialog.dismiss()
-            }
-            .setNegativeButton("No") { dialog, _ ->
-                dialog.dismiss()
-            }
-            .show()
-    }
-
-    private fun downloadCheatFile(titleId: String, gameTitle: String, jsonContent: String) {
-        try {
-            val sanitizedTitle = gameTitle.replace(Regex("[^a-zA-Z0-9 ]"), "").trim()
-            val fileName = "[$sanitizedTitle]-$titleId.json"
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                val contentValues = ContentValues().apply {
-                    put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
-                    put(MediaStore.MediaColumns.MIME_TYPE, "application/json")
-                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
-                }
-
-                val resolver = requireContext().contentResolver
-                val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
-
-                uri?.let {
-                    resolver.openOutputStream(it)?.use { output ->
-                        output.write(jsonContent.toByteArray())
-                    }
-
-                    Toast.makeText(
-                        requireContext(),
-                        "Cheat file downloaded to Downloads folder: $fileName",
-                        Toast.LENGTH_LONG
-                    ).show()
-                } ?: run {
-                    Toast.makeText(
-                        requireContext(),
-                        "Failed to create download file",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            } else {
-                @Suppress("DEPRECATION")
-                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                val file = File(downloadsDir, fileName)
-
-                FileOutputStream(file).use { output ->
-                    output.write(jsonContent.toByteArray())
-                }
-
-                Toast.makeText(
-                    requireContext(),
-                    "Cheat file downloaded to: ${file.absolutePath}",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-        } catch (e: Exception) {
-            Toast.makeText(
-                requireContext(),
-                "Error downloading file: ${e.message}",
-                Toast.LENGTH_LONG
-            ).show()
         }
     }
 
