@@ -84,6 +84,10 @@ class SecondFragment : Fragment() {
                 binding.layoutCheatInfo.visibility = View.GONE
             }
         }
+
+        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+        }
     }
 
     private fun handleCheatFile(uri: Uri) {
