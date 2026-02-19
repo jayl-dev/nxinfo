@@ -10,7 +10,8 @@ import android.provider.MediaStore
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import kotlinx.coroutines.CoroutineScope
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -51,26 +52,40 @@ object CheatSearchHelper {
             return
         }
 
+        val activity = fragment.activity ?: return
+
         val url = "https://raw.githubusercontent.com/HamletDuFromage/switch-cheats-db/refs/heads/master/cheats/$titleId.json"
 
-        CoroutineScope(Dispatchers.Main).launch {
+        fragment.viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val jsonContent = withContext(Dispatchers.IO) {
                     downloadCheatJson(url)
                 }
 
+                if (!fragment.isAdded || activity.isFinishing) return@launch
+
                 if (jsonContent != null) {
-                    showDownloadDialog(fragment, titleId, gameTitle, jsonContent)
+                    MaterialAlertDialogBuilder(activity)
+                        .setTitle("Cheats Found")
+                        .setMessage("Cheat file found for title ID: $titleId\n\nDo you want to download it to your Downloads folder?")
+                        .setPositiveButton("Yes") { _, _ ->
+                            downloadCheatFile(activity, titleId, gameTitle, jsonContent)
+                        }
+                        .setNegativeButton("No", null)
+                        .show()
                 } else {
                     Toast.makeText(
-                        fragment.requireContext(),
+                        activity,
                         "No cheats found in database for this title",
                         Toast.LENGTH_LONG
                     ).show()
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
+                if (!fragment.isAdded) return@launch
                 Toast.makeText(
-                    fragment.requireContext(),
+                    activity,
                     "Error checking cheats database: ${e.message}",
                     Toast.LENGTH_LONG
                 ).show()
@@ -80,25 +95,6 @@ object CheatSearchHelper {
 
     private suspend fun downloadCheatJson(url: String): String? {
         return DownloadHelper.downloadToString(url)
-    }
-
-    private fun showDownloadDialog(
-        fragment: Fragment,
-        titleId: String,
-        gameTitle: String,
-        jsonContent: String
-    ) {
-        MaterialAlertDialogBuilder(fragment.requireContext())
-            .setTitle("Cheats Found")
-            .setMessage("Cheat file found for title ID: $titleId\n\nDo you want to download it to your Downloads folder?")
-            .setPositiveButton("Yes") { dialog, _ ->
-                downloadCheatFile(fragment.requireContext(), titleId, gameTitle, jsonContent)
-                dialog.dismiss()
-            }
-            .setNegativeButton("No") { dialog, _ ->
-                dialog.dismiss()
-            }
-            .show()
     }
 
     private fun downloadCheatFile(

@@ -193,7 +193,8 @@ class SecondFragment : Fragment() {
     }
 
     private fun showExportInfoDialog() {
-        MaterialAlertDialogBuilder(requireContext())
+        val activity = activity ?: return
+        MaterialAlertDialogBuilder(activity)
             .setTitle("Export Info")
             .setMessage("This function export this cheat/mods to a folder structure that the Citron/Eden emulator can load.\n\nAfter exporting, go to Citron/Eden emulator (android), long press a game, Add-ons -> Install -> Mods and cheats to install: \n\nFor example, you will find an exported folder like [Infinite HP]/cheats/12838123812.txt , select the [Infinite HP] folder to install the mods/cheat \n\n**Make sure you check the Build ID, otherwise the mods/cheat will not work**")
             .setPositiveButton("OK") { dialog, _ ->
@@ -209,7 +210,8 @@ class SecondFragment : Fragment() {
             "No codes available"
         }
 
-        MaterialAlertDialogBuilder(requireContext())
+        val activity = activity ?: return
+        MaterialAlertDialogBuilder(activity)
             .setTitle(cheat.name)
             .setMessage(cheatContent)
             .setPositiveButton("Copy") { dialog, _ ->

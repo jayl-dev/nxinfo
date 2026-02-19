@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -292,7 +293,8 @@ class SearchFragment : Fragment() {
 
     fun redownloadDatabase() {
         // Show confirmation dialog
-        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+        val activity = activity ?: return
+        MaterialAlertDialogBuilder(activity)
             .setTitle("Re-download Database")
             .setMessage("This will delete the current database and download the latest version. Continue?")
             .setPositiveButton("Yes") { _, _ ->

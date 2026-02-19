@@ -52,8 +52,9 @@ dependencies {
     implementation(libs.androidx.navigation.ui.ktx)
     implementation(libs.kotlinx.coroutines.android)
 
-    // ViewModel for orientation changes
+    // ViewModel and lifecycle
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.fragment:fragment-ktx:1.6.2")
     implementation("androidx.documentfile:documentfile:1.0.1")
 
