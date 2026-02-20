@@ -95,3 +95,5 @@ Desktop.ini
 !.github/
 app/src/main/assets/switch_games.json
 *.jks
+*.md
+!README.md
