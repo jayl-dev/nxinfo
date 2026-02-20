@@ -17,6 +17,7 @@ Download apk [https://github.com/jayl-dev/nxinfo/releases/latest/download/nxinfo
 
 ![nxinfo](screenshot.png)
 ![nxinfo](screenshot2.png)
+![nxinfo](screenshot3.png)
 
 # Credits
 
